@@ -5,7 +5,7 @@ const MyEvents: React.FC = () => {
     return (
         <div>
             <Navbar />
-            <h1>My Events Page</h1>
+            <h1>Moji događaji page</h1>
         </div>
     );
 }

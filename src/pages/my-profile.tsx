@@ -5,7 +5,7 @@ const MyProfile: React.FC = () => {
     return (
         <div>
             <Navbar />
-            <h1>My Profile Page</h1>
+            <h1>Moj profil Page</h1>
         </div>
     );
 }

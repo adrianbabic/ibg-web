@@ -5,7 +5,7 @@ const LiveEvents: React.FC = () => {
     return (
         <div>
             <Navbar />
-            <h1>Live Events Page</h1>
+            <h1>Aktivni događaji Page</h1>
         </div>
     );
 }

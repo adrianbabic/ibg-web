@@ -1,6 +1,8 @@
-import React from 'react';
-import { TextField, Button, Container, Typography, Box, createTheme, ThemeProvider } from '@mui/material';
+import React, { useState } from 'react';
+import { TextField, Button, Container, Typography, Box, createTheme, ThemeProvider, Alert } from '@mui/material';
 import { styled } from '@mui/system';
+import { useRouter } from 'next/router';
+import { loginUser } from '../utils/api';
 
 const theme = createTheme({
     palette: {
@@ -40,12 +42,49 @@ const LoginBox = styled(Box)({
 
 const StyledTitle = styled(Typography)({
     marginBottom: theme.spacing(4),
-    fontSize: '5rem',
+    fontSize: '4rem',
     fontWeight: 'bold',
     color: '#616161',
 });
 
 const LoginPage: React.FC = () => {
+    const [formData, setFormData] = useState({
+        username: '',
+        password: ''
+    });
+    const [error, setError] = useState('');
+    const router = useRouter();
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData({
+            ...formData,
+            [name]: value
+        });
+        setError('');
+    };
+
+    const handleSubmit = async () => {
+        const { username, password } = formData;
+
+        if (!username || !password) {
+            setError('Both fields must not be empty');
+            return;
+        }
+
+        try {
+            const responseData = await loginUser({ username, password });
+            localStorage.setItem('token', responseData.token);
+            router.push('/');
+        } catch (error: any) {
+            setError(error.message);
+        }
+    };
+
+    const handleRegisterRedirect = () => {
+        router.push('/register');
+    };
+
     return (
         <ThemeProvider theme={theme}>
             <BackgroundContainer maxWidth={false}>
@@ -53,16 +92,19 @@ const LoginPage: React.FC = () => {
                     Igrači bez granica
                 </StyledTitle>
                 <LoginBox>
+                    {error && <Alert severity="error" sx={{ width: '100%', marginBottom: theme.spacing(2) }}>{error}</Alert>}
                     <TextField
                         variant="outlined"
                         margin="normal"
                         required
                         fullWidth
                         id="username"
-                        label="Username"
+                        label="Korisničko ime"
                         name="username"
                         autoComplete="username"
                         autoFocus
+                        value={formData.username}
+                        onChange={handleChange}
                     />
                     <TextField
                         variant="outlined"
@@ -70,27 +112,30 @@ const LoginPage: React.FC = () => {
                         required
                         fullWidth
                         name="password"
-                        label="Password"
+                        label="Lozinka"
                         type="password"
                         id="password"
                         autoComplete="current-password"
+                        value={formData.password}
+                        onChange={handleChange}
                     />
                     <Button
-                        type="submit"
                         fullWidth
                         variant="contained"
                         color="primary"
-                        sx={{ mt: 2 }}
+                        sx={{ mt: 2, textTransform: 'none' }}
+                        onClick={handleSubmit}
                     >
-                        Login
+                        Ulogiraj se
                     </Button>
                     <Button
                         fullWidth
                         variant="contained"
                         color="secondary"
-                        sx={{ mt: 1 }}
+                        sx={{ mt: 1, textTransform: 'none' }}
+                        onClick={handleRegisterRedirect}
                     >
-                        Register
+                        Registriraj se
                     </Button>
                 </LoginBox>
             </BackgroundContainer>

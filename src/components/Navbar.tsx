@@ -48,12 +48,12 @@ const Navbar: React.FC = () => {
                     <Box sx={{ display: 'flex', gap: 2 }}>
                         <Link href="/live-events" passHref>
                             <StyledButton className={currentPath === '/live-events' ? 'active' : ''}>
-                                Live Events
+                                Aktivni događaji
                             </StyledButton>
                         </Link>
                         <Link href="/my-events" passHref>
                             <StyledButton className={currentPath === '/my-events' ? 'active' : ''}>
-                                My Events
+                                Moji događaji
                             </StyledButton>
                         </Link>
                     </Box>
