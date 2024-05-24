@@ -34,7 +34,7 @@ export const loginUser = async (data: LoginData) => {
     if (response.ok) {
         const responseData = await response.json();
         return responseData;
-    } else if (response.status === 403) {
+    } else if (response.status === 500) {
         throw new Error('Pogrešno korisničko ime ili lozinka');
     } else {
         throw new Error('Dogodila se greška na serveru');

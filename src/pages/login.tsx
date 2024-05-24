@@ -3,6 +3,7 @@ import { TextField, Button, Container, Typography, Box, createTheme, ThemeProvid
 import { styled } from '@mui/system';
 import { useRouter } from 'next/router';
 import { loginUser } from '../utils/api';
+import Cookies from 'js-cookie';
 
 const theme = createTheme({
     palette: {
@@ -74,7 +75,8 @@ const LoginPage: React.FC = () => {
 
         try {
             const responseData = await loginUser({ username, password });
-            localStorage.setItem('token', responseData.token);
+            // localStorage.setItem('token', responseData.token);
+            Cookies.set('token', responseData.token, { expires: 1 });
             router.push('/');
         } catch (error: any) {
             setError(error.message);
