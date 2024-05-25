@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
-import { Button, TextField, Grid, MenuItem, Typography, createTheme, ThemeProvider } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { Button, TextField, Grid, MenuItem, Typography, createTheme, ThemeProvider, InputLabel, Select, SelectChangeEvent } from '@mui/material';
 import { useRouter } from 'next/router';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import Navbar from '@/components/Navbar';
 import { DateTimePicker } from '@mui/x-date-pickers';
+import { StyledFormControl } from '@/styles/eventPageStyles';
+import { Location, Sport } from '@/utils/external';
+import { fetchLocations, fetchSports } from '@/utils/api';
+import dayjs from 'dayjs';
 
 const theme = createTheme({
     palette: {
@@ -26,10 +30,38 @@ const MyForm: React.FC = () => {
         name: '',
         currentPeople: 0,
         maxPeople: 0,
-        location: '',
-        sport: '',
-        startTime: new Date(),
+        locationId: '',
+        sportId: '',
+        locked: false,
+        startTime: dayjs().add(1, 'day').format('YYYY-MM-DDT20:00'),
     });
+    const [selectedSportId, setSelectedSportId] = useState<string>("");
+    const [sports, setSports] = useState<Sport[]>([]);
+    const [selectedLocationId, setSelectedLocationId] = useState<string>("");
+    const [locations, setLocations] = useState<Location[]>([]);
+
+    useEffect(() => {
+        const getSports = async () => {
+            try {
+                const sportsData = await fetchSports();
+                setSports(sportsData);
+            } catch (error) {
+                console.error('Pogreska pri dohvacanju sportova:', error);
+            }
+        };
+
+        const getLocations = async () => {
+            try {
+                const locationsData = await fetchLocations();
+                setLocations(locationsData);
+            } catch (error) {
+                console.error('Pogreska pri dohvacanju lokacija:', error);
+            }
+        };
+
+        getSports();
+        getLocations();
+    }, []);
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFormState({
@@ -38,15 +70,18 @@ const MyForm: React.FC = () => {
         });
     };
 
-    const handleDateChange = (date: Date | null) => {
-        setFormState({ ...formState, startTime: date || new Date() });
+    const handleDateChange = (date: any) => {
+        if (date) {
+            const formattedDate = dayjs(date).format('YYYY-MM-DDTHH:mm');
+            setFormState({ ...formState, startTime: formattedDate });
+        }
     };
 
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault();
         // Typically you would send the data to your server here
         console.log(formState);
-        router.push('/my-events');
+        // router.push('/my-events');
     };
 
     const handleReset = () => {
@@ -54,10 +89,23 @@ const MyForm: React.FC = () => {
             name: '',
             currentPeople: 0,
             maxPeople: 0,
-            location: '',
-            sport: '',
-            startTime: new Date()
+            locationId: '',
+            sportId: '',
+            locked: false,
+            startTime: dayjs().toISOString()
         });
+        setSelectedSportId('');
+        setSelectedLocationId('');
+    };
+
+    const handleSelectedSportChanged = (event: SelectChangeEvent) => {
+        setSelectedSportId(event.target.value);
+        setFormState({ ...formState, sportId: event.target.value });
+    };
+
+    const handleSelectedLocationChanged = (event: SelectChangeEvent) => {
+        setSelectedLocationId(event.target.value);
+        setFormState({ ...formState, locationId: event.target.value });
     };
 
     return (
@@ -83,10 +131,9 @@ const MyForm: React.FC = () => {
                                     label="Datum i vrijeme početka"
                                     ampm={false}
                                     disablePast={true}
-                                    format='DD/MM/YYYY hh:mm'
-                                // value={formState.startTime}
-                                // onChange={handleDateChange}
-                                // renderInput={(params: any) => <TextField {...params} fullWidth style={{ marginBottom: 10 }} />}
+                                    format='DD/MM/YYYY HH:mm'
+                                    value={dayjs(formState.startTime)}
+                                    onChange={handleDateChange}
                                 />
                             </div>
                             <TextField
@@ -106,33 +153,39 @@ const MyForm: React.FC = () => {
                                 style={{ width: '30%', marginBottom: 10 }}
                             />
                         </Grid>
-                        <Grid item xs={12} md={3}>
-                            <TextField
-                                fullWidth
-                                select
-                                label="Lokacija"
-                                name="location"
-                                value={formState.location}
-                                onChange={handleInputChange}
-                                style={{ marginBottom: 40 }}
-                            >
-                                <MenuItem value="Location1">Location1</MenuItem>
-                                <MenuItem value="Location2">Location2</MenuItem>
-                                <MenuItem value="Location3">Location3</MenuItem>
-                            </TextField>
-                            <TextField
-                                fullWidth
-                                select
-                                label="Sport"
-                                name="sport"
-                                value={formState.sport}
-                                onChange={handleInputChange}
-                                style={{ marginBottom: 40 }}
-                            >
-                                <MenuItem value="Sport1">Sport1</MenuItem>
-                                <MenuItem value="Sport2">Sport2</MenuItem>
-                                <MenuItem value="Sport3">Sport3</MenuItem>
-                            </TextField>
+                        <Grid item xs={12} md={4}>
+                            <StyledFormControl variant="outlined" fullWidth style={{ marginBottom: 40 }}>
+                                <InputLabel id="location-dropdown-label">Lokacija</InputLabel>
+                                <Select
+                                    labelId="location-dropdown-label"
+                                    value={selectedLocationId}
+                                    onChange={handleSelectedLocationChanged}
+                                    label="Lokacija"
+                                >
+                                    <MenuItem value="">
+                                        <em>-</em>
+                                    </MenuItem>
+                                    {locations.map((location) => (
+                                        <MenuItem key={location.id} value={location.id}>{location.name}</MenuItem>
+                                    ))}
+                                </Select>
+                            </StyledFormControl>
+                            <StyledFormControl variant="outlined" fullWidth style={{ marginBottom: 40 }}>
+                                <InputLabel id="sport-dropdown-label">Sport</InputLabel>
+                                <Select
+                                    labelId="sport-dropdown-label"
+                                    value={selectedSportId}
+                                    onChange={handleSelectedSportChanged}
+                                    label="Sport"
+                                >
+                                    <MenuItem value="">
+                                        <em>-</em>
+                                    </MenuItem>
+                                    {sports.map((sport) => (
+                                        <MenuItem key={sport.id} value={sport.id}>{sport.name}</MenuItem>
+                                    ))}
+                                </Select>
+                            </StyledFormControl>
                         </Grid>
                     </Grid>
                     <Grid container spacing={2} style={{ marginTop: 20 }}>

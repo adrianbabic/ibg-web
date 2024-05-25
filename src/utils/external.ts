@@ -49,8 +49,8 @@ export interface CreateEventInfo {
     name: string;
     maxPeople: number;
     currentPeople: number;
-    location: Location;
+    locationId: string;
     startTime: string;
     locked: boolean;
-    sport: Sport;
+    sportId: string;
 }

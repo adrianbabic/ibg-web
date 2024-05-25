@@ -9,9 +9,9 @@ import Link from 'next/link';
 
 
 const LiveEvents: React.FC = () => {
-    const [firstDropdown, setFirstDropdown] = useState('');
     const [sports, setSports] = useState<Sport[]>([]);
     const [sportEvents, setSportEvents] = useState<SportEvent[]>([]);
+    const [selectedSportId, setSelectedSportId] = useState<string>("");
 
     useEffect(() => {
         const getSports = async () => {
@@ -36,8 +36,8 @@ const LiveEvents: React.FC = () => {
         getEvents();
     }, []);
 
-    const handleFirstDropdownChange = (event: SelectChangeEvent) => {
-        setFirstDropdown(event.target.value as string);
+    const handleSelectedSportChanged = (event: SelectChangeEvent) => {
+        setSelectedSportId(event.target.value);
     };
 
     return (
@@ -51,12 +51,12 @@ const LiveEvents: React.FC = () => {
                 </Link>
                 <Box sx={{ display: 'flex', gap: 2, marginRight: '10%' }}>
                     <StyledFormControl variant="outlined">
-                        <InputLabel id="first-dropdown-label">Odaberi sport</InputLabel>
+                        <InputLabel id="first-dropdown-label">Sport</InputLabel>
                         <Select
                             labelId="first-dropdown-label"
-                            value={firstDropdown}
-                            onChange={handleFirstDropdownChange}
-                            label="Odaberi sport"
+                            value={selectedSportId}
+                            onChange={handleSelectedSportChanged}
+                            label="Sport"
                         >
                             <MenuItem value="">
                                 <em>-</em>

@@ -57,6 +57,19 @@ export const fetchSports = async () => {
     }
 };
 
+export const fetchLocations = async () => {
+    try {
+        const response = await fetch(`${HOST}/location/public`);
+        if (!response.ok) {
+            throw new Error('Pogreska pri dohvacanju lokacija');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Pogreska pri dohvacanju lokacija:', error);
+        throw error;
+    }
+};
+
 export const fetchLiveEvents = async () => {
     try {
         const token = Cookies.get('token');

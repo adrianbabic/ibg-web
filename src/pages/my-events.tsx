@@ -51,12 +51,12 @@ const MyEvents: React.FC = () => {
                 </Link>
                 <Box sx={{ display: 'flex', gap: 2, marginRight: '10%' }}>
                     <StyledFormControl variant="outlined">
-                        <InputLabel id="first-dropdown-label">Odaberi sport</InputLabel>
+                        <InputLabel id="first-dropdown-label">Sport</InputLabel>
                         <Select
                             labelId="first-dropdown-label"
                             value={firstDropdown}
                             onChange={handleFirstDropdownChange}
-                            label="Odaberi sport"
+                            label="Sport"
                         >
                             <MenuItem value="">
                                 <em>-</em>
