@@ -10,6 +10,7 @@ import Box from '@mui/material/Box';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { AccountCircleOutlined } from '@mui/icons-material';
 import { grey } from '@mui/material/colors';
+import Cookies from 'js-cookie';
 
 const NavbarContainer = styled(AppBar)({
     backgroundColor: '#90EE90',
@@ -35,11 +36,19 @@ const StyledButton = styled(Button)(({ theme }) => ({
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
     color: 'grey',
+    '&:hover': {
+        backgroundColor: '#C6F6C6', // Darker shade of green
+    },
 }));
 
 const Navbar: React.FC = () => {
     const router = useRouter();
     const currentPath = router.pathname;
+
+    const handleLogout = () => {
+        Cookies.remove('token');
+        router.push('/login');
+    };
 
     return (
         <NavbarContainer position="static">
@@ -64,7 +73,7 @@ const Navbar: React.FC = () => {
                             <AccountCircleOutlined sx={{ color: grey[700], fontSize: '1.5rem' }} />
                         </StyledButton>
                     </Link>
-                    <StyledIconButton>
+                    <StyledIconButton onClick={handleLogout}>
                         <LogoutIcon sx={{ color: grey[700], fontSize: '1.5rem' }} />
                     </StyledIconButton>
                 </Box>
