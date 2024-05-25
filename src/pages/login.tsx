@@ -77,6 +77,7 @@ const LoginPage: React.FC = () => {
             const responseData = await loginUser({ username, password });
             // localStorage.setItem('token', responseData.token);
             Cookies.set('token', responseData.token, { expires: 1 });
+            Cookies.set('userName', responseData.userName, { expires: 1 });
             router.push('/');
         } catch (error: any) {
             setError(error.message);

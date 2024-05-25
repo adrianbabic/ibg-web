@@ -4,7 +4,13 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import GlobalStyles from '@mui/material/GlobalStyles';
 
-const theme = createTheme();
+const theme = createTheme({
+    palette: {
+        primary: {
+            main: '#90EE90',
+        },
+    },
+});
 
 const App = ({ Component, pageProps }: AppProps) => (
     <ThemeProvider theme={theme}>

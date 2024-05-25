@@ -4,6 +4,7 @@ import { styled } from '@mui/system';
 import { useRouter } from 'next/router';
 import { registerUser } from '@/utils/api';
 import Cookies from 'js-cookie';
+import { validateEmail } from '@/utils/validation';
 
 const theme = createTheme({
     palette: {
@@ -76,10 +77,16 @@ const RegisterPage: React.FC = () => {
             return;
         }
 
+        if (!validateEmail(email)) {
+            setError('Unesi ispravnu email adresu');
+            return;
+        }
+
         try {
             const responseData = await registerUser(formData);
             // localStorage.setItem('token', responseData.token);
             Cookies.set('token', responseData.token, { expires: 1 });
+            Cookies.set('userName', responseData.userName, { expires: 1 });
             router.push('/');
         } catch (error: any) {
             setError(error.message);

@@ -16,8 +16,9 @@ export const registerUser = async (data: RegisterData) => {
     if (response.ok) {
         const responseData = await response.json();
         return responseData;
-    } else if (response.status === 403) {
-        throw new Error('Korisničko ime ili email su već zauzeti');
+    } else if (response.status === 400) {
+        const responseData = await response.json();
+        throw new Error(responseData.body);
     } else {
         throw new Error('Dogodila se greška na serveru');
     }

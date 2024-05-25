@@ -5,6 +5,7 @@ import { Sport, SportEvent } from '@/utils/external';
 import { fetchMyEvents, fetchSports } from '@/utils/api';
 import EventCard from '@/components/EventCard';
 import { HorizontalBar, StyledButton, StyledFormControl } from '@/styles/eventPageStyles';
+import Link from 'next/link';
 
 
 const MyEvents: React.FC = () => {
@@ -43,9 +44,11 @@ const MyEvents: React.FC = () => {
         <div>
             <Navbar />
             <HorizontalBar>
-                <StyledButton variant="contained">
-                    Stvori novi događaj
-                </StyledButton>
+                <Link href="/create-event" passHref>
+                    <StyledButton variant="contained">
+                        Stvori novi događaj
+                    </StyledButton>
+                </Link>
                 <Box sx={{ display: 'flex', gap: 2, marginRight: '10%' }}>
                     <StyledFormControl variant="outlined">
                         <InputLabel id="first-dropdown-label">Odaberi sport</InputLabel>

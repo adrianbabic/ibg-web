@@ -44,3 +44,13 @@ export interface SportEvent {
     sport: Sport;
     playersViaApp?: Player[];
 }
+
+export interface CreateEventInfo {
+    name: string;
+    maxPeople: number;
+    currentPeople: number;
+    location: Location;
+    startTime: string;
+    locked: boolean;
+    sport: Sport;
+}
