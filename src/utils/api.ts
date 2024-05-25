@@ -1,5 +1,5 @@
 import { HOST } from "@/constants";
-import { LoginData, RegisterData } from "./external";
+import { CreateEventInfo, LoginData, RegisterData } from "./external";
 import Cookies from "js-cookie";
 import { NextResponse } from "next/server";
 
@@ -123,6 +123,37 @@ export const fetchMyEvents = async () => {
         return await response.json();
     } catch (error) {
         console.error('Pogreska pri dohvacanju aktivnih dogadaka:', error);
+        throw error;
+    }
+};
+
+export const createEvent = async (createEventInfo: CreateEventInfo) => {
+    try {
+        const token = Cookies.get('token');
+
+        const tokenValidation = await fetch(`${HOST}/auth/validate-token/public?token=${token}`);
+
+        if (tokenValidation.status !== 200) {
+            const loginUrl = new URL('/login', HOST);
+            return NextResponse.redirect(loginUrl);
+        }
+
+        const response = await fetch(`${HOST}/event/createEvent`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify(createEventInfo),
+        });
+
+        if (!response.ok) {
+            throw new Error("Nije moguće spremiti događaj, pokušajte ponovno");
+        }
+
+        return response;
+    } catch (error) {
         throw error;
     }
 };

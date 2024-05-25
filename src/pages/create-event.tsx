@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, TextField, Grid, MenuItem, Typography, createTheme, ThemeProvider, InputLabel, Select, SelectChangeEvent } from '@mui/material';
+import { Button, TextField, Grid, MenuItem, Typography, createTheme, ThemeProvider, InputLabel, Select, SelectChangeEvent, FormHelperText } from '@mui/material';
 import { useRouter } from 'next/router';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -7,8 +7,9 @@ import Navbar from '@/components/Navbar';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import { StyledFormControl } from '@/styles/eventPageStyles';
 import { Location, Sport } from '@/utils/external';
-import { fetchLocations, fetchSports } from '@/utils/api';
+import { createEvent, fetchLocations, fetchSports } from '@/utils/api';
 import dayjs from 'dayjs';
+import { Error } from '@mui/icons-material';
 
 const theme = createTheme({
     palette: {
@@ -39,6 +40,7 @@ const MyForm: React.FC = () => {
     const [sports, setSports] = useState<Sport[]>([]);
     const [selectedLocationId, setSelectedLocationId] = useState<string>("");
     const [locations, setLocations] = useState<Location[]>([]);
+    const [validationError, setValidationError] = useState<string | null>(null);
 
     useEffect(() => {
         const getSports = async () => {
@@ -64,6 +66,7 @@ const MyForm: React.FC = () => {
     }, []);
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setValidationError(null);
         setFormState({
             ...formState,
             [event.target.name]: event.target.type === 'checkbox' ? event.target.checked : event.target.value,
@@ -71,17 +74,75 @@ const MyForm: React.FC = () => {
     };
 
     const handleDateChange = (date: any) => {
+        setValidationError(null);
         if (date) {
             const formattedDate = dayjs(date).format('YYYY-MM-DDTHH:mm');
             setFormState({ ...formState, startTime: formattedDate });
         }
     };
 
-    const handleSubmit = (event: React.FormEvent) => {
+    const handleSelectedSportChanged = (event: SelectChangeEvent) => {
+        setValidationError(null);
+        setSelectedSportId(event.target.value);
+        setFormState({ ...formState, sportId: event.target.value });
+    };
+
+    const handleSelectedLocationChanged = (event: SelectChangeEvent) => {
+        setValidationError(null);
+        setSelectedLocationId(event.target.value);
+        setFormState({ ...formState, locationId: event.target.value });
+    };
+
+    const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-        // Typically you would send the data to your server here
-        console.log(formState);
-        // router.push('/my-events');
+        if (validateForm()) {
+            try {
+                await createEvent(formState);
+                router.push('/my-events');
+            } catch (error) {
+                setValidationError("Nije moguće spremiti događaj, pokušajte ponovno");
+            }
+        }
+    };
+
+    const validateForm = () => {
+        if (!formState.name) {
+            setValidationError("Ime događaja ne smije biti prazno.");
+            return false;
+        }
+
+        if (dayjs(formState.startTime).isBefore(dayjs())) {
+            setValidationError("Datum i vrijeme početka moraju biti u budućnosti.");
+            return false;
+        }
+
+        if (formState.currentPeople < 0) {
+            setValidationError("Trenutan broj ljudi mora biti 0 ili veći.");
+            return false;
+        }
+
+        if (formState.maxPeople < 1) {
+            setValidationError("Maksimalan broj ljudi mora biti 1 ili veći.");
+            return false;
+        }
+
+        if (formState.maxPeople <= formState.currentPeople) {
+            setValidationError("Maksimalan broj ljudi mora biti veći od trenutnog broja ljudi.");
+            return false;
+        }
+
+        if (!formState.locationId) {
+            setValidationError("Lokacija mora biti odabrana.");
+            return false;
+        }
+
+        if (!formState.sportId) {
+            setValidationError("Sport mora biti odabran.");
+            return false;
+        }
+
+        setValidationError(null);
+        return true;
     };
 
     const handleReset = () => {
@@ -96,16 +157,7 @@ const MyForm: React.FC = () => {
         });
         setSelectedSportId('');
         setSelectedLocationId('');
-    };
-
-    const handleSelectedSportChanged = (event: SelectChangeEvent) => {
-        setSelectedSportId(event.target.value);
-        setFormState({ ...formState, sportId: event.target.value });
-    };
-
-    const handleSelectedLocationChanged = (event: SelectChangeEvent) => {
-        setSelectedLocationId(event.target.value);
-        setFormState({ ...formState, locationId: event.target.value });
+        setValidationError(null);
     };
 
     return (
@@ -170,7 +222,7 @@ const MyForm: React.FC = () => {
                                     ))}
                                 </Select>
                             </StyledFormControl>
-                            <StyledFormControl variant="outlined" fullWidth style={{ marginBottom: 40 }}>
+                            <StyledFormControl variant="outlined" fullWidth style={{ marginBottom: 60 }}>
                                 <InputLabel id="sport-dropdown-label">Sport</InputLabel>
                                 <Select
                                     labelId="sport-dropdown-label"
@@ -186,6 +238,14 @@ const MyForm: React.FC = () => {
                                     ))}
                                 </Select>
                             </StyledFormControl>
+                            {!!validationError && (
+                                <FormHelperText error>
+                                    <Typography variant="body1" component="span" style={{ display: 'flex', alignItems: 'center' }}>
+                                        <Error fontSize="small" style={{ marginRight: '8px' }} />
+                                        {validationError}
+                                    </Typography>
+                                </FormHelperText>
+                            )}
                         </Grid>
                     </Grid>
                     <Grid container spacing={2} style={{ marginTop: 20 }}>
