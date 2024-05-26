@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, TextField, Grid, MenuItem, Typography, createTheme, ThemeProvider, InputLabel, Select, SelectChangeEvent, FormHelperText } from '@mui/material';
+import { Button, TextField, Grid, MenuItem, Typography, createTheme, ThemeProvider, InputLabel, Select, SelectChangeEvent, FormHelperText, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import { useRouter } from 'next/router';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -7,7 +7,7 @@ import Navbar from '@/components/Navbar';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import { StyledFormControl } from '@/styles/eventPageStyles';
 import { CreateEventInfo, Location, Sport, SportEvent } from '@/utils/external';
-import { createEvent, fetchEventById, fetchLocations, fetchSports, joinEvent } from '@/utils/api';
+import { createEvent, deleteEvent, fetchEventById, fetchLocations, fetchSports, joinEvent } from '@/utils/api';
 import dayjs from 'dayjs';
 import { Error } from '@mui/icons-material';
 import Cookies from 'js-cookie';
@@ -22,8 +22,8 @@ const theme = createTheme({
             default: '#B8F4B8',
         },
         secondary: {
-            main: '#DAF9DA'
-        }
+            main: '#F08080'
+        },
     },
 });
 
@@ -47,6 +47,8 @@ const EventPage: React.FC = () => {
     const [sportEvent, setSportEvent] = useState<SportEvent | null>(null);
     const [isOwner, setIsOwner] = useState<boolean>(false);
     const [isDisabled, setIsDisabled] = useState<boolean>(true);
+    const [editing, setEditing] = useState<boolean>(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
 
     useEffect(() => {
         const getSports = async () => {
@@ -93,7 +95,7 @@ const EventPage: React.FC = () => {
     }, [router.query]);
 
     useEffect(() => {
-        if (sportEvent) {
+        if (sportEvent && !editing) {
             setSelectedLocationId(sportEvent.location.id);
             setSelectedSportId(sportEvent.sport.id);
             setFormState({
@@ -106,13 +108,14 @@ const EventPage: React.FC = () => {
                 startTime: sportEvent.startTime
             });
             const userName = Cookies.get("userName");
-            if (userName == sportEvent.eventOwner.name)
+            if (userName == sportEvent.eventOwner.userName)
                 setIsOwner(true);
             else
                 setIsOwner(false);
+
         }
 
-    }, [sportEvent]);
+    }, [sportEvent, editing]);
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setValidationError(null);
@@ -203,21 +206,6 @@ const EventPage: React.FC = () => {
         return true;
     };
 
-    const handleReset = () => {
-        setFormState({
-            name: '',
-            currentPeople: 0,
-            maxPeople: 0,
-            locationId: '',
-            sportId: '',
-            locked: false,
-            startTime: dayjs().add(1, 'day').format('YYYY-MM-DDT20:00'),
-        });
-        setSelectedSportId('');
-        setSelectedLocationId('');
-        setValidationError(null);
-    };
-
     const isUserInSportEvent = (): boolean => {
         if (sportEvent) {
             const userName = Cookies.get("userName");
@@ -245,6 +233,24 @@ const EventPage: React.FC = () => {
                 router.push(`/event/${sportEvent.id}`);
             } catch (error) {
                 setValidationError("Nije moguće pridružiti se događaju");
+            }
+        }
+    }
+
+    const handleDeleteButtonClicked = () => {
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteDialogChoosen = async (confirmed: boolean) => {
+        setDeleteDialogOpen(false);
+        if (confirmed) {
+            if (sportEvent) {
+                try {
+                    await deleteEvent(sportEvent.id);
+                    router.push("/my-events");
+                } catch (error) {
+                    setValidationError("Nije moguće obrisati ovaj događaj");
+                }
             }
         }
     }
@@ -343,15 +349,36 @@ const EventPage: React.FC = () => {
                             )}
                         </Grid>
                     </Grid>
+                    <Dialog
+                        open={deleteDialogOpen}
+                        onClose={() => handleDeleteDialogChoosen(false)}
+                        aria-labelledby="alert-dialog-title"
+                        aria-describedby="alert-dialog-description"
+                    >
+                        <DialogTitle id="alert-dialog-title">{"Brisanje događaja"}</DialogTitle>
+                        <DialogContent>
+                            <DialogContentText id="alert-dialog-description">
+                                Jeste li sigurni da želite obrisati ovaj događaj?
+                            </DialogContentText>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={() => handleDeleteDialogChoosen(false)} color="primary">
+                                Odustani
+                            </Button>
+                            <Button onClick={() => handleDeleteDialogChoosen(true)} color="primary" autoFocus>
+                                Potvrdi
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
                     <Grid container spacing={2} style={{ marginTop: 20 }}>
                         {isOwner && (
                             <Grid item xs={5}>
                                 <Button type="submit" variant="contained" color="primary" sx={{ textTransform: 'none', width: '30%', marginRight: "30px" }}>
-                                    Spremi
+                                    Uredi
                                 </Button>
-                                <Button onClick={handleReset} variant="contained" color="secondary"
+                                <Button onClick={handleDeleteButtonClicked} variant="contained" color="secondary"
                                     sx={{ textTransform: 'none', width: '30%' }}>
-                                    Resetiraj
+                                    Obriši
                                 </Button>
                             </Grid>
                         )}
