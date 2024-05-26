@@ -7,7 +7,7 @@ import Navbar from '@/components/Navbar';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import { StyledFormControl } from '@/styles/eventPageStyles';
 import { CreateEventInfo, Location, Sport, SportEvent } from '@/utils/external';
-import { createEvent, deleteEvent, fetchEventById, fetchLocations, fetchSports, joinEvent } from '@/utils/api';
+import { createEvent, deleteEvent, fetchEventById, fetchLocations, fetchSports, joinEvent, updateEvent } from '@/utils/api';
 import dayjs from 'dayjs';
 import { Error } from '@mui/icons-material';
 import Cookies from 'js-cookie';
@@ -187,7 +187,6 @@ const EventPage: React.FC = () => {
         }
 
         if (formState.maxPeople <= formState.currentPeople) {
-            console.log(formState);
             setValidationError("Maksimalan broj ljudi mora biti veći od trenutnog broja ljudi.");
             return false;
         }
@@ -250,6 +249,29 @@ const EventPage: React.FC = () => {
                     router.push("/my-events");
                 } catch (error) {
                     setValidationError("Nije moguće obrisati ovaj događaj");
+                }
+            }
+        }
+    }
+
+    const handleEditButtonClicked = () => {
+        setEditing(true);
+        setIsDisabled(false);
+    }
+
+    const handleCancelEditButtonClicked = () => {
+        setEditing(false);
+        setIsDisabled(true);
+    }
+
+    const handleSaveEditChangesButtonClicked = async () => {
+        if (validateForm()) {
+            if (sportEvent) {
+                try {
+                    await updateEvent(sportEvent.id, formState);
+                    router.reload();
+                } catch (error) {
+                    setValidationError("Nije moguće urediti događaj");
                 }
             }
         }
@@ -371,14 +393,25 @@ const EventPage: React.FC = () => {
                         </DialogActions>
                     </Dialog>
                     <Grid container spacing={2} style={{ marginTop: 20 }}>
-                        {isOwner && (
+                        {isOwner && !editing && (
                             <Grid item xs={5}>
-                                <Button type="submit" variant="contained" color="primary" sx={{ textTransform: 'none', width: '30%', marginRight: "30px" }}>
+                                <Button onClick={handleEditButtonClicked} variant="contained" color="primary" sx={{ textTransform: 'none', width: '30%', marginRight: "30px" }}>
                                     Uredi
                                 </Button>
                                 <Button onClick={handleDeleteButtonClicked} variant="contained" color="secondary"
                                     sx={{ textTransform: 'none', width: '30%' }}>
                                     Obriši
+                                </Button>
+                            </Grid>
+                        )}
+                        {isOwner && editing && (
+                            <Grid item xs={5}>
+                                <Button onClick={handleSaveEditChangesButtonClicked} variant="contained" color="primary" sx={{ textTransform: 'none', width: '30%', marginRight: "30px" }}>
+                                    Spremi promjene
+                                </Button>
+                                <Button onClick={handleCancelEditButtonClicked} variant="contained" color="secondary"
+                                    sx={{ textTransform: 'none', width: '30%' }}>
+                                    Odustani
                                 </Button>
                             </Grid>
                         )}

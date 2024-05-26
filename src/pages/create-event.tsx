@@ -135,7 +135,6 @@ const MyForm: React.FC = () => {
         }
 
         if (formState.maxPeople <= formState.currentPeople) {
-            console.log(formState);
             setValidationError("Maksimalan broj ljudi mora biti veći od trenutnog broja ljudi.");
             return false;
         }

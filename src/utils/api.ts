@@ -273,3 +273,34 @@ export const deleteEvent = async (eventId: string) => {
         throw error;
     }
 };
+
+export const updateEvent = async (eventId: string, createEventInfo: CreateEventInfo) => {
+    try {
+        const token = Cookies.get('token');
+
+        const tokenValidation = await fetch(`${HOST}/auth/validate-token/public?token=${token}`);
+
+        if (tokenValidation.status !== 200) {
+            const loginUrl = new URL('/login', HOST);
+            return NextResponse.redirect(loginUrl);
+        }
+
+        const response = await fetch(`${HOST}/event/updateEvent/${eventId}`, {
+            method: 'PUT',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify(createEventInfo),
+        });
+
+        if (!response.ok) {
+            throw new Error("Nije moguće urediti događaj");
+        }
+
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
