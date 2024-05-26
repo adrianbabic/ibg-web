@@ -6,12 +6,12 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import Navbar from '@/components/Navbar';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import { StyledFormControl } from '@/styles/eventPageStyles';
-import { CreateEventInfo, Location, Sport } from '@/utils/external';
-import { createEvent, fetchLocations, fetchSports } from '@/utils/api';
+import { CreateEventInfo, Location, Sport, SportEvent } from '@/utils/external';
+import { createEvent, fetchEventById, fetchLocations, fetchSports } from '@/utils/api';
 import dayjs from 'dayjs';
 import { Error } from '@mui/icons-material';
 import Cookies from 'js-cookie';
-import { NextResponse } from 'next/server';
+
 
 const theme = createTheme({
     palette: {
@@ -29,6 +29,7 @@ const theme = createTheme({
 
 const EventPage: React.FC = () => {
     const router = useRouter();
+
     const [formState, setFormState] = useState<CreateEventInfo>({
         name: '',
         currentPeople: 0,
@@ -43,18 +44,11 @@ const EventPage: React.FC = () => {
     const [selectedLocationId, setSelectedLocationId] = useState<string>("");
     const [locations, setLocations] = useState<Location[]>([]);
     const [validationError, setValidationError] = useState<string | null>(null);
+    const [sportEvent, setSportEvent] = useState<SportEvent | null>(null);
     const [isOwner, setIsOwner] = useState<boolean>(false);
+    const [isDisabled, setIsDisabled] = useState<boolean>(true);
 
     useEffect(() => {
-        const userName: string | undefined = Cookies.get('userName');
-        if (!userName) setIsOwner(false);
-        else {
-            // dodati logiku koja ce postaviti isOwner na true
-
-        }
-
-
-
         const getSports = async () => {
             try {
                 const sportsData = await fetchSports();
@@ -76,6 +70,51 @@ const EventPage: React.FC = () => {
         getSports();
         getLocations();
     }, []);
+
+    useEffect(() => {
+        const getEventById = async (id: string | string[] | undefined) => {
+            try {
+                if (id && !Array.isArray(id)) {
+                    console.log("id prosao: " + id);
+                    const sportEventData = await fetchEventById(id);
+                    setSportEvent(sportEventData);
+                    setValidationError(null);
+                } else {
+                    console.log("id fail: " + id);
+                    setValidationError("Predan je id događaja koji ne postoji!");
+                }
+            } catch (error) {
+                setValidationError("Pogreska pri dohvaćanju događaja pomoću id");
+                console.error('Pogreska pri dohvacanju sportova:', error);
+            }
+        };
+
+        const { id } = router.query;
+        getEventById(id);
+
+    }, [router.query]);
+
+    useEffect(() => {
+        if (sportEvent) {
+            setSelectedLocationId(sportEvent.location.id);
+            setSelectedSportId(sportEvent.sport.id);
+            setFormState({
+                name: sportEvent.name,
+                currentPeople: sportEvent.currentPeople,
+                maxPeople: sportEvent.maxPeople,
+                locationId: sportEvent.location.id,
+                sportId: sportEvent.sport.id,
+                locked: false,
+                startTime: sportEvent.startTime
+            });
+            const userName = Cookies.get("userName");
+            if (userName == sportEvent.eventOwner.name)
+                setIsOwner(true);
+            else
+                setIsOwner(false);
+        }
+
+    }, [sportEvent]);
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setValidationError(null);
@@ -187,7 +226,7 @@ const EventPage: React.FC = () => {
                 <Navbar />
                 <form onSubmit={handleSubmit} style={{ margin: '20px' }}>
                     <Typography variant="h6" style={{ marginBottom: 50 }}>
-                        Unesi podatke za stvaranje novog događaja
+                        Informacije o događaju
                     </Typography>
                     <Grid container spacing={8}>
                         <Grid item xs={12} md={6}>
@@ -198,6 +237,7 @@ const EventPage: React.FC = () => {
                                 value={formState.name}
                                 onChange={handleInputChange}
                                 style={{ marginBottom: 40, width: '80%' }}
+                                disabled={isDisabled}
                             />
                             <div style={{ marginBottom: 40, width: '80%' }} >
                                 <DateTimePicker
@@ -207,6 +247,7 @@ const EventPage: React.FC = () => {
                                     format='DD/MM/YYYY HH:mm'
                                     value={dayjs(formState.startTime)}
                                     onChange={handleDateChange}
+                                    disabled={isDisabled}
                                 />
                             </div>
                             <TextField
@@ -216,6 +257,7 @@ const EventPage: React.FC = () => {
                                 value={formState.currentPeople}
                                 onChange={handleInputChange}
                                 style={{ width: '30%', marginRight: '2%', marginBottom: 10 }}
+                                disabled={isDisabled}
                             />
                             <TextField
                                 label="Maksimalan broj ljudi"
@@ -224,6 +266,7 @@ const EventPage: React.FC = () => {
                                 value={formState.maxPeople}
                                 onChange={handleInputChange}
                                 style={{ width: '30%', marginBottom: 10 }}
+                                disabled={isDisabled}
                             />
                         </Grid>
                         <Grid item xs={12} md={4}>
@@ -234,6 +277,7 @@ const EventPage: React.FC = () => {
                                     value={selectedLocationId}
                                     onChange={handleSelectedLocationChanged}
                                     label="Lokacija"
+                                    disabled={isDisabled}
                                 >
                                     <MenuItem value="">
                                         <em>-</em>
@@ -250,6 +294,7 @@ const EventPage: React.FC = () => {
                                     value={selectedSportId}
                                     onChange={handleSelectedSportChanged}
                                     label="Sport"
+                                    disabled={isDisabled}
                                 >
                                     <MenuItem value="">
                                         <em>-</em>
@@ -270,15 +315,18 @@ const EventPage: React.FC = () => {
                         </Grid>
                     </Grid>
                     <Grid container spacing={2} style={{ marginTop: 20 }}>
-                        <Grid item xs={5}>
-                            <Button type="submit" variant="contained" color="primary" sx={{ textTransform: 'none', width: '30%', marginRight: "30px" }}>
-                                Spremi
-                            </Button>
-                            <Button onClick={handleReset} variant="contained" color="secondary"
-                                sx={{ textTransform: 'none', width: '30%' }}>
-                                Resetiraj
-                            </Button>
-                        </Grid>
+                        {isOwner && (
+                            <Grid item xs={5}>
+                                <Button type="submit" variant="contained" color="primary" sx={{ textTransform: 'none', width: '30%', marginRight: "30px" }}>
+                                    Spremi
+                                </Button>
+                                <Button onClick={handleReset} variant="contained" color="secondary"
+                                    sx={{ textTransform: 'none', width: '30%' }}>
+                                    Resetiraj
+                                </Button>
+                            </Grid>
+                        )}
+
                     </Grid>
                 </form>
             </LocalizationProvider>

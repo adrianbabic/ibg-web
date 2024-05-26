@@ -185,3 +185,31 @@ export const createEvent = async (createEventInfo: CreateEventInfo) => {
         throw error;
     }
 };
+
+export const fetchEventById = async (eventId: string) => {
+    try {
+        const token = Cookies.get('token');
+
+        const tokenValidation = await fetch(`${HOST}/auth/validate-token/public?token=${token}`);
+
+        if (tokenValidation.status !== 200) {
+            const loginUrl = new URL('/login', HOST);
+            return NextResponse.redirect(loginUrl);
+        }
+
+        const response = await fetch(`${HOST}/event/${eventId}`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+        });
+        if (!response.ok) {
+            throw new Error('Odgovor servera nije bio 200 OK za dohvat dogadaja pomocu id-ja');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Pogreska pri dohvacanju dogadaja pomocu id-ja:', error);
+        throw error;
+    }
+};
