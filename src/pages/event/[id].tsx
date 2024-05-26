@@ -7,7 +7,7 @@ import Navbar from '@/components/Navbar';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import { StyledFormControl } from '@/styles/eventPageStyles';
 import { CreateEventInfo, Location, Sport, SportEvent } from '@/utils/external';
-import { createEvent, fetchEventById, fetchLocations, fetchSports } from '@/utils/api';
+import { createEvent, fetchEventById, fetchLocations, fetchSports, joinEvent } from '@/utils/api';
 import dayjs from 'dayjs';
 import { Error } from '@mui/icons-material';
 import Cookies from 'js-cookie';
@@ -75,12 +75,10 @@ const EventPage: React.FC = () => {
         const getEventById = async (id: string | string[] | undefined) => {
             try {
                 if (id && !Array.isArray(id)) {
-                    console.log("id prosao: " + id);
                     const sportEventData = await fetchEventById(id);
                     setSportEvent(sportEventData);
                     setValidationError(null);
                 } else {
-                    console.log("id fail: " + id);
                     setValidationError("Predan je id događaja koji ne postoji!");
                 }
             } catch (error) {
@@ -220,6 +218,37 @@ const EventPage: React.FC = () => {
         setValidationError(null);
     };
 
+    const isUserInSportEvent = (): boolean => {
+        if (sportEvent) {
+            const userName = Cookies.get("userName");
+
+            if (!userName || !sportEvent.playersViaApp) {
+                return false;
+            }
+
+            return sportEvent.playersViaApp.some(player => player.userName === userName);
+        }
+        return false;
+    }
+
+    const isMatchFull = (): boolean => {
+        if (sportEvent) {
+            return sportEvent.currentPeople >= sportEvent.maxPeople;
+        }
+        return false;
+    }
+
+    const handleJoinButtonClicked = async () => {
+        if (sportEvent) {
+            try {
+                await joinEvent(sportEvent.id);
+                router.push(`/event/${sportEvent.id}`);
+            } catch (error) {
+                setValidationError("Nije moguće pridružiti se događaju");
+            }
+        }
+    }
+
     return (
         <ThemeProvider theme={theme}>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -326,7 +355,30 @@ const EventPage: React.FC = () => {
                                 </Button>
                             </Grid>
                         )}
-
+                        {!isOwner && (
+                            <Grid item xs={5}>
+                                {isUserInSportEvent() && (
+                                    <Button type="submit" variant="contained" color="primary" sx={{ textTransform: 'none', width: '30%', marginRight: "30px" }} disabled={true}>
+                                        Već ste pridruženi ovom događaju
+                                    </Button>
+                                )}
+                                {!isUserInSportEvent() && isMatchFull() && (
+                                    <Button type="submit" variant="contained" color="primary" sx={{ textTransform: 'none', width: '30%', marginRight: "30px" }} disabled={true}>
+                                        Događaj je popunjen
+                                    </Button>
+                                )}
+                                {!isUserInSportEvent() && sportEvent?.locked && (
+                                    <Button type="submit" variant="contained" color="primary" sx={{ textTransform: 'none', width: '30%', marginRight: "30px" }} disabled={true}>
+                                        Događaj je zaključan
+                                    </Button>
+                                )}
+                                {!isUserInSportEvent() && !isMatchFull() && !sportEvent?.locked && (
+                                    <Button onClick={handleJoinButtonClicked} variant="contained" color="primary" sx={{ textTransform: 'none', width: '30%', marginRight: "30px" }} >
+                                        Pridruži se događaju
+                                    </Button>
+                                )}
+                            </Grid>
+                        )}
                     </Grid>
                 </form>
             </LocalizationProvider>
