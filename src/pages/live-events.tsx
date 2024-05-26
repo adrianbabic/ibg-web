@@ -1,17 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
-import { Box, Grid, InputLabel, MenuItem, Select, SelectChangeEvent } from '@mui/material';
-import { Sport, SportEvent } from '@/utils/external';
-import { fetchLiveEvents, fetchSports } from '@/utils/api';
+import { Box, Grid, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
+import { Location, Sport, SportEvent } from '@/utils/external';
+import { fetchFilteredEvents, fetchLiveEvents, fetchLocations, fetchSports } from '@/utils/api';
 import EventCard from '@/components/EventCard';
 import { HorizontalBar, StyledButton, StyledFormControl } from '@/styles/eventPageStyles';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 
 const LiveEvents: React.FC = () => {
-    const [sports, setSports] = useState<Sport[]>([]);
+    const router = useRouter();
+
     const [sportEvents, setSportEvents] = useState<SportEvent[]>([]);
+    const [sports, setSports] = useState<Sport[]>([]);
     const [selectedSportId, setSelectedSportId] = useState<string>("");
+    const [locations, setLocations] = useState<Location[]>([]);
+    const [selectedLocationId, setSelectedLocationId] = useState<string>("");
 
     useEffect(() => {
         const getSports = async () => {
@@ -32,12 +37,44 @@ const LiveEvents: React.FC = () => {
             }
         };
 
+        const getLocations = async () => {
+            try {
+                const locationsData = await fetchLocations();
+                setLocations(locationsData);
+            } catch (error) {
+                console.error('Pogreska pri dohvacanju lokacija:', error);
+            }
+        };
+
         getSports();
         getEvents();
+        getLocations();
     }, []);
+
+    useEffect(() => {
+        const getFilteredEvents = async () => {
+            try {
+                const eventsData = await fetchFilteredEvents(false, selectedSportId, selectedLocationId);
+                setSportEvents(eventsData.content);
+            } catch (error) {
+                console.error('Pogreska pri dohvacanju filtriranih dogadaja:', error);
+            }
+        };
+
+        getFilteredEvents();
+
+    }, [selectedLocationId, selectedSportId]);
+
+    const handleSelectedLocationChanged = (event: SelectChangeEvent) => {
+        setSelectedLocationId(event.target.value);
+    };
 
     const handleSelectedSportChanged = (event: SelectChangeEvent) => {
         setSelectedSportId(event.target.value);
+    };
+
+    const handleCardClick = (id: string) => {
+        router.push(`/event/${id}`);
     };
 
     return (
@@ -49,11 +86,27 @@ const LiveEvents: React.FC = () => {
                         Stvori novi događaj
                     </StyledButton>
                 </Link>
-                <Box sx={{ display: 'flex', gap: 2, marginRight: '10%' }}>
-                    <StyledFormControl variant="outlined">
-                        <InputLabel id="first-dropdown-label">Sport</InputLabel>
+                <Box sx={{ display: 'flex', gap: 2, marginRight: '10%', marginTop: 5 }}>
+                    <StyledFormControl variant="outlined" fullWidth style={{ marginBottom: 40 }}>
+                        <InputLabel id="location-dropdown-label">Lokacija</InputLabel>
                         <Select
-                            labelId="first-dropdown-label"
+                            labelId="location-dropdown-label"
+                            value={selectedLocationId}
+                            onChange={handleSelectedLocationChanged}
+                            label="Lokacija"
+                        >
+                            <MenuItem value="">
+                                <em>-</em>
+                            </MenuItem>
+                            {locations.map((location) => (
+                                <MenuItem key={location.id} value={location.id}>{location.name}</MenuItem>
+                            ))}
+                        </Select>
+                    </StyledFormControl>
+                    <StyledFormControl variant="outlined">
+                        <InputLabel id="sport-dropdown-label">Sport</InputLabel>
+                        <Select
+                            labelId="sport-dropdown-label"
                             value={selectedSportId}
                             onChange={handleSelectedSportChanged}
                             label="Sport"
@@ -69,13 +122,21 @@ const LiveEvents: React.FC = () => {
                 </Box>
             </HorizontalBar>
             <Box sx={{ padding: 2 }}>
-                <Grid container spacing={2}>
-                    {sportEvents.map((event) => (
-                        <Grid item xs={12} sm={6} md={3} key={event.id}>
-                            <EventCard event={event} />
-                        </Grid>
-                    ))}
-                </Grid>
+                {sportEvents.length === 0 ? (
+                    <Typography variant="h6" component="p">
+                        Nema događaja za odabranu kategoriju
+                    </Typography>
+                ) : (
+                    <Grid container spacing={2}>
+                        {sportEvents.map((event) => (
+                            <Grid item xs={12} sm={6} md={3} key={event.id}>
+                                <Box onClick={() => handleCardClick(event.id)} sx={{ cursor: 'pointer' }}>
+                                    <EventCard event={event} />
+                                </Box>
+                            </Grid>
+                        ))}
+                    </Grid>
+                )}
             </Box>
         </div>
     );

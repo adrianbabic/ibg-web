@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import { Box, Grid, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
 import { Location, Sport, SportEvent } from '@/utils/external';
-import { fetchLocations, fetchMyEvents, fetchMyFilteredEvents, fetchSports } from '@/utils/api';
+import { fetchLocations, fetchMyEvents, fetchFilteredEvents, fetchSports } from '@/utils/api';
 import EventCard from '@/components/EventCard';
 import { HorizontalBar, StyledButton, StyledFormControl } from '@/styles/eventPageStyles';
 import Link from 'next/link';
@@ -12,7 +12,6 @@ import { useRouter } from 'next/router';
 const MyEvents: React.FC = () => {
     const router = useRouter();
 
-    const [firstDropdown, setFirstDropdown] = useState('');
     const [sportEvents, setSportEvents] = useState<SportEvent[]>([]);
     const [sports, setSports] = useState<Sport[]>([]);
     const [selectedSportId, setSelectedSportId] = useState<string>("");
@@ -52,26 +51,26 @@ const MyEvents: React.FC = () => {
         getLocations();
     }, []);
 
-    // useEffect(() => {
-    //     const getFilteredEvents = async () => {
-    //         try {
-    //             const eventsData = await fetchMyFilteredEvents();
-    //             setSportEvents(eventsData.content);
-    //         } catch (error) {
-    //             console.error('Pogreska pri dohvacanju filtriranih dogadaja:', error);
-    //         }
-    //     };
+    useEffect(() => {
+        const getFilteredEvents = async () => {
+            try {
+                const eventsData = await fetchFilteredEvents(true, selectedSportId, selectedLocationId);
+                setSportEvents(eventsData.content);
+            } catch (error) {
+                console.error('Pogreska pri dohvacanju filtriranih dogadaja:', error);
+            }
+        };
 
-    //     getFilteredEvents();
+        getFilteredEvents();
 
-    // }, [selectedLocationId, selectedSportId]);
+    }, [selectedLocationId, selectedSportId]);
 
     const handleSelectedLocationChanged = (event: SelectChangeEvent) => {
         setSelectedLocationId(event.target.value);
     };
 
-    const handleFirstDropdownChange = (event: SelectChangeEvent) => {
-        setFirstDropdown(event.target.value as string);
+    const handleSelectedSportChanged = (event: SelectChangeEvent) => {
+        setSelectedSportId(event.target.value);
     };
 
     const handleCardClick = (id: string) => {
@@ -105,11 +104,11 @@ const MyEvents: React.FC = () => {
                         </Select>
                     </StyledFormControl>
                     <StyledFormControl variant="outlined">
-                        <InputLabel id="first-dropdown-label">Sport</InputLabel>
+                        <InputLabel id="sport-dropdown-label">Sport</InputLabel>
                         <Select
-                            labelId="first-dropdown-label"
-                            value={firstDropdown}
-                            onChange={handleFirstDropdownChange}
+                            labelId="sport-dropdown-label"
+                            value={selectedSportId}
+                            onChange={handleSelectedSportChanged}
                             label="Sport"
                         >
                             <MenuItem value="">

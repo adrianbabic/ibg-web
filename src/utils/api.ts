@@ -127,7 +127,7 @@ export const fetchMyEvents = async () => {
     }
 };
 
-export const fetchMyFilteredEvents = async (sportId: string, locationId: string) => {
+export const fetchFilteredEvents = async (myGames: boolean, sportId: string, locationId: string) => {
     try {
         const token = Cookies.get('token');
 
@@ -138,7 +138,7 @@ export const fetchMyFilteredEvents = async (sportId: string, locationId: string)
             return NextResponse.redirect(loginUrl);
         }
 
-        const response = await fetch(`${HOST}/event/filter?myGames=True`, {
+        const response = await fetch(`${HOST}/event/filter?myGames=${myGames}&location=${locationId}&sport=${sportId}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json',
