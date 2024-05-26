@@ -118,11 +118,39 @@ export const fetchMyEvents = async () => {
             credentials: 'include',
         });
         if (!response.ok) {
-            throw new Error('Odgovor servera nije bio 200 OK za dohvat aktivnih dogadaja');
+            throw new Error('Odgovor servera nije bio 200 OK za dohvat mojih dogadaja');
         }
         return await response.json();
     } catch (error) {
-        console.error('Pogreska pri dohvacanju aktivnih dogadaka:', error);
+        console.error('Pogreska pri dohvacanju mojih dogadaja:', error);
+        throw error;
+    }
+};
+
+export const fetchMyFilteredEvents = async (sportId: string, locationId: string) => {
+    try {
+        const token = Cookies.get('token');
+
+        const tokenValidation = await fetch(`${HOST}/auth/validate-token/public?token=${token}`);
+
+        if (tokenValidation.status !== 200) {
+            const loginUrl = new URL('/login', HOST);
+            return NextResponse.redirect(loginUrl);
+        }
+
+        const response = await fetch(`${HOST}/event/filter?myGames=True`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+        });
+        if (!response.ok) {
+            throw new Error('Odgovor servera nije bio 200 OK za dohvat filtriranih mojih dogadaja');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Pogreska pri dohvacanju filtriranih mojih dogadaja:', error);
         throw error;
     }
 };

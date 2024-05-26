@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import { Box, Grid, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
-import { Sport, SportEvent } from '@/utils/external';
-import { fetchMyEvents, fetchSports } from '@/utils/api';
+import { Location, Sport, SportEvent } from '@/utils/external';
+import { fetchLocations, fetchMyEvents, fetchMyFilteredEvents, fetchSports } from '@/utils/api';
 import EventCard from '@/components/EventCard';
 import { HorizontalBar, StyledButton, StyledFormControl } from '@/styles/eventPageStyles';
 import Link from 'next/link';
@@ -10,8 +10,11 @@ import Link from 'next/link';
 
 const MyEvents: React.FC = () => {
     const [firstDropdown, setFirstDropdown] = useState('');
-    const [sports, setSports] = useState<Sport[]>([]);
     const [sportEvents, setSportEvents] = useState<SportEvent[]>([]);
+    const [sports, setSports] = useState<Sport[]>([]);
+    const [selectedSportId, setSelectedSportId] = useState<string>("");
+    const [locations, setLocations] = useState<Location[]>([]);
+    const [selectedLocationId, setSelectedLocationId] = useState<string>("");
 
     useEffect(() => {
         const getSports = async () => {
@@ -28,13 +31,41 @@ const MyEvents: React.FC = () => {
                 const eventsData = await fetchMyEvents();
                 setSportEvents(eventsData.content);
             } catch (error) {
-                console.error('Pogreska pri dohvacanju aktivnih dogadaja:', error);
+                console.error('Pogreska pri dohvacanju mojih dogadaja:', error);
+            }
+        };
+
+        const getLocations = async () => {
+            try {
+                const locationsData = await fetchLocations();
+                setLocations(locationsData);
+            } catch (error) {
+                console.error('Pogreska pri dohvacanju lokacija:', error);
             }
         };
 
         getSports();
         getEvents();
+        getLocations();
     }, []);
+
+    // useEffect(() => {
+    //     const getFilteredEvents = async () => {
+    //         try {
+    //             const eventsData = await fetchMyFilteredEvents();
+    //             setSportEvents(eventsData.content);
+    //         } catch (error) {
+    //             console.error('Pogreska pri dohvacanju filtriranih dogadaja:', error);
+    //         }
+    //     };
+
+    //     getFilteredEvents();
+
+    // }, [selectedLocationId, selectedSportId]);
+
+    const handleSelectedLocationChanged = (event: SelectChangeEvent) => {
+        setSelectedLocationId(event.target.value);
+    };
 
     const handleFirstDropdownChange = (event: SelectChangeEvent) => {
         setFirstDropdown(event.target.value as string);
@@ -49,7 +80,23 @@ const MyEvents: React.FC = () => {
                         Stvori novi događaj
                     </StyledButton>
                 </Link>
-                <Box sx={{ display: 'flex', gap: 2, marginRight: '10%' }}>
+                <Box sx={{ display: 'flex', gap: 2, marginRight: '10%', marginTop: 5 }}>
+                    <StyledFormControl variant="outlined" fullWidth style={{ marginBottom: 40 }}>
+                        <InputLabel id="location-dropdown-label">Lokacija</InputLabel>
+                        <Select
+                            labelId="location-dropdown-label"
+                            value={selectedLocationId}
+                            onChange={handleSelectedLocationChanged}
+                            label="Lokacija"
+                        >
+                            <MenuItem value="">
+                                <em>-</em>
+                            </MenuItem>
+                            {locations.map((location) => (
+                                <MenuItem key={location.id} value={location.id}>{location.name}</MenuItem>
+                            ))}
+                        </Select>
+                    </StyledFormControl>
                     <StyledFormControl variant="outlined">
                         <InputLabel id="first-dropdown-label">Sport</InputLabel>
                         <Select

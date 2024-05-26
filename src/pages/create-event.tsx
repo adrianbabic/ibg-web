@@ -6,7 +6,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import Navbar from '@/components/Navbar';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import { StyledFormControl } from '@/styles/eventPageStyles';
-import { Location, Sport } from '@/utils/external';
+import { CreateEventInfo, Location, Sport } from '@/utils/external';
 import { createEvent, fetchLocations, fetchSports } from '@/utils/api';
 import dayjs from 'dayjs';
 import { Error } from '@mui/icons-material';
@@ -27,7 +27,7 @@ const theme = createTheme({
 
 const MyForm: React.FC = () => {
     const router = useRouter();
-    const [formState, setFormState] = useState({
+    const [formState, setFormState] = useState<CreateEventInfo>({
         name: '',
         currentPeople: 0,
         maxPeople: 0,
@@ -67,10 +67,18 @@ const MyForm: React.FC = () => {
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setValidationError(null);
-        setFormState({
-            ...formState,
-            [event.target.name]: event.target.type === 'checkbox' ? event.target.checked : event.target.value,
-        });
+        try {
+            const num: number = parseInt(event.target.value);
+            setFormState({
+                ...formState,
+                [event.target.name]: isNaN(num) ? event.target.value : num,
+            });
+        } catch (error) {
+            setFormState({
+                ...formState,
+                [event.target.name]: event.target.value,
+            });
+        }
     };
 
     const handleDateChange = (date: any) => {
@@ -127,6 +135,7 @@ const MyForm: React.FC = () => {
         }
 
         if (formState.maxPeople <= formState.currentPeople) {
+            console.log(formState);
             setValidationError("Maksimalan broj ljudi mora biti veći od trenutnog broja ljudi.");
             return false;
         }
@@ -153,7 +162,7 @@ const MyForm: React.FC = () => {
             locationId: '',
             sportId: '',
             locked: false,
-            startTime: dayjs().toISOString()
+            startTime: dayjs().add(1, 'day').format('YYYY-MM-DDT20:00'),
         });
         setSelectedSportId('');
         setSelectedLocationId('');
