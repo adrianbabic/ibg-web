@@ -6,9 +6,12 @@ import { fetchLocations, fetchMyEvents, fetchMyFilteredEvents, fetchSports } fro
 import EventCard from '@/components/EventCard';
 import { HorizontalBar, StyledButton, StyledFormControl } from '@/styles/eventPageStyles';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 
 const MyEvents: React.FC = () => {
+    const router = useRouter();
+
     const [firstDropdown, setFirstDropdown] = useState('');
     const [sportEvents, setSportEvents] = useState<SportEvent[]>([]);
     const [sports, setSports] = useState<Sport[]>([]);
@@ -71,6 +74,10 @@ const MyEvents: React.FC = () => {
         setFirstDropdown(event.target.value as string);
     };
 
+    const handleCardClick = (id: string) => {
+        router.push(`/event/${id}`);
+    };
+
     return (
         <div>
             <Navbar />
@@ -124,7 +131,9 @@ const MyEvents: React.FC = () => {
                     <Grid container spacing={2}>
                         {sportEvents.map((event) => (
                             <Grid item xs={12} sm={6} md={3} key={event.id}>
-                                <EventCard event={event} />
+                                <Box onClick={() => handleCardClick(event.id)} sx={{ cursor: 'pointer' }}>
+                                    <EventCard event={event} />
+                                </Box>
                             </Grid>
                         ))}
                     </Grid>
