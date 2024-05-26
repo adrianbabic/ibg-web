@@ -138,7 +138,11 @@ export const fetchFilteredEvents = async (myGames: boolean, sportId: string, loc
             return NextResponse.redirect(loginUrl);
         }
 
-        const response = await fetch(`${HOST}/event/filter?myGames=${myGames}&location=${locationId}&sport=${sportId}`, {
+        var filteredUrl = `${HOST}/event/filter?myGames=${myGames}`;
+        if (sportId.trim() !== "") filteredUrl += `&sport=${sportId}`;
+        if (locationId.trim() !== "") filteredUrl += `&location=${locationId}`;
+
+        const response = await fetch(filteredUrl, {
             headers: {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json',
